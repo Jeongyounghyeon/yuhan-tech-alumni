@@ -24,25 +24,27 @@ model User {
   email     String     @unique
   image     String?
   status    UserStatus @default(PENDING)
-  createdAt DateTime   @default(now())
-  updatedAt DateTime   @updatedAt
+  createdAt DateTime   @default(now()) @map("created_at")
+  updatedAt DateTime   @updatedAt @map("updated_at")
 
-  accounts     Account[]
-  sessions     Session[]
+  accounts      Account[]
+  sessions      Session[]
   alumniProfile AlumniProfile?
-  notices      Notice[]
-  posts        Post[]
-  comments     Comment[]
-  galleryPosts GalleryPost[]
-  events       Event[]
+  notices       Notice[]
+  posts         Post[]
+  comments      Comment[]
+  galleryPosts  GalleryPost[]
+  events        Event[]
+
+  @@map("users")
 }
 
 model Account {
   id                String  @id @default(cuid())
-  userId            Int
+  userId            Int     @map("user_id")
   type              String
   provider          String
-  providerAccountId String
+  providerAccountId String  @map("provider_account_id")
   access_token      String? @db.Text
   refresh_token     String? @db.Text
   expires_at        Int?
@@ -54,15 +56,18 @@ model Account {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([provider, providerAccountId])
+  @@map("accounts")
 }
 
 model Session {
   id           String   @id @default(cuid())
-  sessionToken String   @unique
-  userId       Int
+  sessionToken String   @unique @map("session_token")
+  userId       Int      @map("user_id")
   expires      DateTime
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("sessions")
 }
 
 model VerificationToken {
@@ -71,6 +76,7 @@ model VerificationToken {
   expires    DateTime
 
   @@unique([identifier, token])
+  @@map("verification_tokens")
 }
 
 // ───────────────────────────────
@@ -79,13 +85,15 @@ model VerificationToken {
 
 model AlumniProfile {
   id             Int     @id @default(autoincrement())
-  graduationYear Int
+  graduationYear Int     @map("graduation_year")
   department     String
   phone          String
   bio            String? @db.VarChar(500)
 
-  userId Int  @unique
+  userId Int  @unique @map("user_id")
   user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("alumni_profiles")
 }
 
 // ───────────────────────────────
@@ -96,12 +104,14 @@ model Notice {
   id        Int      @id @default(autoincrement())
   title     String
   content   String   @db.Text
-  viewCount Int      @default(0)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  viewCount Int      @default(0) @map("view_count")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
 
-  authorId Int
+  authorId Int  @map("author_id")
   author   User @relation(fields: [authorId], references: [id])
+
+  @@map("notices")
 }
 
 // ───────────────────────────────
@@ -112,24 +122,28 @@ model Post {
   id        Int      @id @default(autoincrement())
   title     String
   content   String   @db.Text
-  viewCount Int      @default(0)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  viewCount Int      @default(0) @map("view_count")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
 
-  authorId Int
+  authorId Int       @map("author_id")
   author   User      @relation(fields: [authorId], references: [id])
   comments Comment[]
+
+  @@map("posts")
 }
 
 model Comment {
   id        Int      @id @default(autoincrement())
   content   String
-  createdAt DateTime @default(now())
+  createdAt DateTime @default(now()) @map("created_at")
 
-  authorId Int
+  authorId Int  @map("author_id")
   author   User @relation(fields: [authorId], references: [id])
-  postId   Int
+  postId   Int  @map("post_id")
   post     Post @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@map("comments")
 }
 
 // ───────────────────────────────
@@ -140,13 +154,15 @@ model GalleryPost {
   id        Int      @id @default(autoincrement())
   title     String
   content   String?  @db.Text
-  viewCount Int      @default(0)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  viewCount Int      @default(0) @map("view_count")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
 
-  authorId Int
-  author   User           @relation(fields: [authorId], references: [id])
+  authorId Int          @map("author_id")
+  author   User         @relation(fields: [authorId], references: [id])
   images   GalleryImage[]
+
+  @@map("gallery_posts")
 }
 
 model GalleryImage {
@@ -154,8 +170,10 @@ model GalleryImage {
   url   String
   order Int    @default(0)
 
-  postId Int
+  postId Int         @map("post_id")
   post   GalleryPost @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@map("gallery_images")
 }
 
 // ───────────────────────────────
@@ -167,13 +185,15 @@ model Event {
   title       String
   description String?  @db.Text
   location    String?
-  startDate   DateTime
-  endDate     DateTime
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  startDate   DateTime @map("start_date")
+  endDate     DateTime @map("end_date")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
 
-  authorId Int
+  authorId Int  @map("author_id")
   author   User @relation(fields: [authorId], references: [id])
+
+  @@map("events")
 }
 
 // ───────────────────────────────
@@ -184,11 +204,13 @@ model Officer {
   id             Int      @id @default(autoincrement())
   name           String
   position       String
-  graduationYear Int?
-  photoUrl       String?
+  graduationYear Int?     @map("graduation_year")
+  photoUrl       String?  @map("photo_url")
   order          Int      @default(0)
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  @@map("officers")
 }
 
 // ───────────────────────────────
@@ -198,6 +220,8 @@ model Officer {
 model ScholarshipInfo {
   id          Int    @id @default(1)
   description String @db.Text
+
+  @@map("scholarship_info")
 }
 
 model Scholarship {
@@ -207,6 +231,8 @@ model Scholarship {
   period      String
   description String?  @db.Text
   order       Int      @default(0)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@map("scholarships")
 }
