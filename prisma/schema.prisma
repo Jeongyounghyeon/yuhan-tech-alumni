@@ -1,0 +1,212 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../app/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ───────────────────────────────
+// 인증 (NextAuth PrismaAdapter)
+// ───────────────────────────────
+
+enum UserStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  ADMIN
+}
+
+model User {
+  id        Int        @id @default(autoincrement())
+  name      String
+  email     String     @unique
+  image     String?
+  status    UserStatus @default(PENDING)
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+
+  accounts     Account[]
+  sessions     Session[]
+  alumniProfile AlumniProfile?
+  notices      Notice[]
+  posts        Post[]
+  comments     Comment[]
+  galleryPosts GalleryPost[]
+  events       Event[]
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            Int
+  type              String
+  provider          String
+  providerAccountId String
+  access_token      String? @db.Text
+  refresh_token     String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       Int
+  expires      DateTime
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+// ───────────────────────────────
+// 동문 프로필
+// ───────────────────────────────
+
+model AlumniProfile {
+  id             Int     @id @default(autoincrement())
+  graduationYear Int
+  department     String
+  phone          String
+  bio            String? @db.VarChar(500)
+
+  userId Int  @unique
+  user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+// ───────────────────────────────
+// 공지사항
+// ───────────────────────────────
+
+model Notice {
+  id        Int      @id @default(autoincrement())
+  title     String
+  content   String   @db.Text
+  viewCount Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  authorId Int
+  author   User @relation(fields: [authorId], references: [id])
+}
+
+// ───────────────────────────────
+// 자유게시판
+// ───────────────────────────────
+
+model Post {
+  id        Int      @id @default(autoincrement())
+  title     String
+  content   String   @db.Text
+  viewCount Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  authorId Int
+  author   User      @relation(fields: [authorId], references: [id])
+  comments Comment[]
+}
+
+model Comment {
+  id        Int      @id @default(autoincrement())
+  content   String
+  createdAt DateTime @default(now())
+
+  authorId Int
+  author   User @relation(fields: [authorId], references: [id])
+  postId   Int
+  post     Post @relation(fields: [postId], references: [id], onDelete: Cascade)
+}
+
+// ───────────────────────────────
+// 갤러리
+// ───────────────────────────────
+
+model GalleryPost {
+  id        Int      @id @default(autoincrement())
+  title     String
+  content   String?  @db.Text
+  viewCount Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  authorId Int
+  author   User           @relation(fields: [authorId], references: [id])
+  images   GalleryImage[]
+}
+
+model GalleryImage {
+  id    Int    @id @default(autoincrement())
+  url   String
+  order Int    @default(0)
+
+  postId Int
+  post   GalleryPost @relation(fields: [postId], references: [id], onDelete: Cascade)
+}
+
+// ───────────────────────────────
+// 행사 일정
+// ───────────────────────────────
+
+model Event {
+  id          Int      @id @default(autoincrement())
+  title       String
+  description String?  @db.Text
+  location    String?
+  startDate   DateTime
+  endDate     DateTime
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  authorId Int
+  author   User @relation(fields: [authorId], references: [id])
+}
+
+// ───────────────────────────────
+// 임원진
+// ───────────────────────────────
+
+model Officer {
+  id             Int      @id @default(autoincrement())
+  name           String
+  position       String
+  graduationYear Int?
+  photoUrl       String?
+  order          Int      @default(0)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+}
+
+// ───────────────────────────────
+// 장학회
+// ───────────────────────────────
+
+model ScholarshipInfo {
+  id          Int    @id @default(1)
+  description String @db.Text
+}
+
+model Scholarship {
+  id          Int      @id @default(autoincrement())
+  name        String
+  amount      String
+  period      String
+  description String?  @db.Text
+  order       Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
