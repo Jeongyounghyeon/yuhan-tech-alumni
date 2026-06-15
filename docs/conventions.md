@@ -151,10 +151,7 @@ return Response.json({
 | `DATABASE_URL` | PostgreSQL 연결 문자열 |
 | `NEXTAUTH_SECRET` | NextAuth 시크릿 |
 | `NEXTAUTH_URL` | 사이트 URL |
-| `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` | Google OAuth |
-| `KAKAO_CLIENT_ID` / `KAKAO_CLIENT_SECRET` | Kakao OAuth |
-| `NAVER_CLIENT_ID` / `NAVER_CLIENT_SECRET` | Naver OAuth |
-| `R2_ACCOUNT_ID` | Cloudflare 계정 ID |
+| `R2_ACCOUNT_ID` | Cloudflare 계정 ID (갤러리 이미지 업로드) |
 | `R2_ACCESS_KEY_ID` | R2 액세스 키 |
 | `R2_SECRET_ACCESS_KEY` | R2 시크릿 키 |
 | `R2_BUCKET_NAME` | R2 버킷명 |
@@ -165,7 +162,8 @@ return Response.json({
 ## 금지 패턴
 
 - `any` 타입 사용 금지 — `unknown` + 타입 가드 사용
-- 클라이언트에서 DB 직접 접근 금지 — 반드시 API Route 경유
+- 클라이언트 컴포넌트에서 DB 직접 접근 금지 — 서버 컴포넌트 또는 Server Action 경유
 - `console.log` 커밋 금지 — 디버깅 후 제거
 - 이미지를 서버 메모리로 처리 금지 — R2 presigned URL 방식 사용
 - `export default` 컴포넌트 금지 (page.tsx, layout.tsx 예외)
+- DB 쿼리가 있는 페이지에 `export const dynamic = "force-dynamic"` 필수 (정적 빌드 방지)

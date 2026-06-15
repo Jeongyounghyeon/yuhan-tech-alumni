@@ -10,78 +10,43 @@
 // prisma/schema.prisma
 
 generator client {
-  provider = "prisma-client-js"
+  provider = "prisma-client"
+  output   = "../app/generated/prisma"
 }
 
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
 }
 
 // ───────────────────────────────
-// 인증 (NextAuth PrismaAdapter)
+// 인증 (Credentials + JWT)
 // ───────────────────────────────
 
 enum UserStatus {
-  PENDING   // 소셜 로그인 완료, 승인 대기
+  PENDING   // 회원가입 완료, 승인 대기
   APPROVED  // 관리자 승인 완료
   REJECTED  // 승인 거절
   ADMIN     // 관리자
 }
 
 model User {
-  id             Int            @id @default(autoincrement())
-  name           String
-  email          String         @unique
-  image          String?
-  status         UserStatus     @default(PENDING)
-  createdAt      DateTime       @default(now())
-  updatedAt      DateTime       @updatedAt
+  id        Int        @id @default(autoincrement())
+  name      String
+  email     String     @unique
+  image     String?
+  password  String?    // bcrypt hash (cost 12)
+  status    UserStatus @default(PENDING)
+  createdAt DateTime   @default(now()) @map("created_at")
+  updatedAt DateTime   @updatedAt @map("updated_at")
 
-  accounts       Account[]
-  sessions       Session[]
-  alumniProfile  AlumniProfile?
-  notices        Notice[]
-  posts          Post[]
-  comments       Comment[]
-  galleryPosts   GalleryPost[]
-  events         Event[]
-}
+  alumniProfile AlumniProfile?
+  notices       Notice[]
+  posts         Post[]
+  comments      Comment[]
+  galleryPosts  GalleryPost[]
+  events        Event[]
 
-model Account {
-  id                String  @id @default(cuid())
-  userId            Int
-  type              String
-  provider          String
-  providerAccountId String
-  access_token      String? @db.Text
-  refresh_token     String? @db.Text
-  expires_at        Int?
-  token_type        String?
-  scope             String?
-  id_token          String? @db.Text
-  session_state     String?
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@unique([provider, providerAccountId])
-}
-
-model Session {
-  id           String   @id @default(cuid())
-  sessionToken String   @unique
-  userId       Int
-  expires      DateTime
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-}
-
-model VerificationToken {
-  identifier String
-  token      String   @unique
-  expires    DateTime
-
-  @@unique([identifier, token])
+  @@map("users")
 }
 
 // ───────────────────────────────
@@ -90,13 +55,14 @@ model VerificationToken {
 
 model AlumniProfile {
   id             Int     @id @default(autoincrement())
-  graduationYear Int
-  department     String
-  phone          String
-  bio            String? @db.VarChar(500)
+  graduationYear Int     @map("graduation_year")
+  department     String  @map("department")  // 필수
+  phone          String? @map("phone")        // 선택
 
-  userId Int  @unique
+  userId Int  @unique @map("user_id")
   user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("alumni_profiles")
 }
 
 // ───────────────────────────────
@@ -107,12 +73,14 @@ model Notice {
   id        Int      @id @default(autoincrement())
   title     String
   content   String   @db.Text
-  viewCount Int      @default(0)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  viewCount Int      @default(0) @map("view_count")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
 
-  authorId Int
+  authorId Int  @map("author_id")
   author   User @relation(fields: [authorId], references: [id])
+
+  @@map("notices")
 }
 
 // ───────────────────────────────
@@ -120,27 +88,31 @@ model Notice {
 // ───────────────────────────────
 
 model Post {
-  id        Int       @id @default(autoincrement())
+  id        Int      @id @default(autoincrement())
   title     String
-  content   String    @db.Text
-  viewCount Int       @default(0)
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
+  content   String   @db.Text
+  viewCount Int      @default(0) @map("view_count")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
 
-  authorId Int
+  authorId Int       @map("author_id")
   author   User      @relation(fields: [authorId], references: [id])
   comments Comment[]
+
+  @@map("posts")
 }
 
 model Comment {
   id        Int      @id @default(autoincrement())
   content   String
-  createdAt DateTime @default(now())
+  createdAt DateTime @default(now()) @map("created_at")
 
-  authorId Int
+  authorId Int  @map("author_id")
   author   User @relation(fields: [authorId], references: [id])
-  postId   Int
+  postId   Int  @map("post_id")
   post     Post @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@map("comments")
 }
 
 // ───────────────────────────────
@@ -148,16 +120,18 @@ model Comment {
 // ───────────────────────────────
 
 model GalleryPost {
-  id        Int            @id @default(autoincrement())
+  id        Int      @id @default(autoincrement())
   title     String
-  content   String?        @db.Text
-  viewCount Int            @default(0)
-  createdAt DateTime       @default(now())
-  updatedAt DateTime       @updatedAt
+  content   String?  @db.Text
+  viewCount Int      @default(0) @map("view_count")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
 
-  authorId Int
-  author   User           @relation(fields: [authorId], references: [id])
+  authorId Int          @map("author_id")
+  author   User         @relation(fields: [authorId], references: [id])
   images   GalleryImage[]
+
+  @@map("gallery_posts")
 }
 
 model GalleryImage {
@@ -165,8 +139,10 @@ model GalleryImage {
   url   String
   order Int    @default(0)
 
-  postId Int
+  postId Int         @map("post_id")
   post   GalleryPost @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@map("gallery_images")
 }
 
 // ───────────────────────────────
@@ -178,13 +154,15 @@ model Event {
   title       String
   description String?  @db.Text
   location    String?
-  startDate   DateTime
-  endDate     DateTime
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  startDate   DateTime @map("start_date")
+  endDate     DateTime @map("end_date")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
 
-  authorId Int
+  authorId Int  @map("author_id")
   author   User @relation(fields: [authorId], references: [id])
+
+  @@map("events")
 }
 
 // ───────────────────────────────
@@ -195,21 +173,18 @@ model Officer {
   id             Int      @id @default(autoincrement())
   name           String
   position       String
-  graduationYear Int?
-  photoUrl       String?
+  graduationYear Int?     @map("graduation_year")
+  photoUrl       String?  @map("photo_url")
   order          Int      @default(0)
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  @@map("officers")
 }
 
 // ───────────────────────────────
 // 장학회
 // ───────────────────────────────
-
-model ScholarshipInfo {
-  id          Int    @id @default(1)
-  description String @db.Text
-}
 
 model Scholarship {
   id          Int      @id @default(autoincrement())
@@ -218,8 +193,10 @@ model Scholarship {
   period      String
   description String?  @db.Text
   order       Int      @default(0)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@map("scholarships")
 }
 ```
 
@@ -233,8 +210,6 @@ User ──1:N──► Notice
 User ──1:N──► Post ──1:N──► Comment
 User ──1:N──► GalleryPost ──1:N──► GalleryImage
 User ──1:N──► Event
-User ──1:N──► Account (OAuth)
-User ──1:N──► Session
 ```
 
 ---
@@ -244,10 +219,14 @@ User ──1:N──► Session
 | 결정 | 이유 |
 |------|------|
 | `User.status` enum 4단계 | PENDING/APPROVED 외 REJECTED, ADMIN 분리로 미들웨어 판단 단순화 |
+| `User.password` nullable | OAuth 추가 시 소셜 로그인 유저는 password 없음 |
 | `AlumniProfile` 분리 | User(인증)와 동문 정보(도메인) 관심사 분리 |
+| `AlumniProfile.phone` nullable | 회원가입 필수 항목 최소화, 이후 프로필 수정에서 추가 가능 |
+| OAuth 테이블 없음 | 현재 Credentials 전용, JWT 세션 → Account/Session/VerificationToken 불필요 |
+| `ScholarshipInfo` 테이블 없음 | 소개 텍스트는 변경 빈도가 낮아 코드 상수로 관리 |
 | `GalleryImage.order` 필드 | 이미지 순서 변경 지원 |
 | `Officer`에 User 관계 없음 | 임원진은 관리자가 직접 입력, 실제 유저 계정과 무관 |
-| `ScholarshipInfo` id=1 고정 | 단일 레코드 설정값 패턴 (upsert로 관리) |
+| snake_case DB 컬럼 | `@map` / `@@map` 으로 Prisma camelCase ↔ DB snake_case 매핑 |
 
 ---
 

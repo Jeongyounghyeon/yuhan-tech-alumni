@@ -1,20 +1,21 @@
 # Spec: 인증 및 동문 가입 (Auth)
 
 ## 개요
-소셜 로그인 기반 인증. 최초 로그인 시 PENDING 상태로 저장되며,  
-관리자 승인 후 APPROVED 상태로 전환되어 동문 전용 기능을 사용할 수 있다.
+이메일/비밀번호 기반 회원가입 + 관리자 승인 방식.  
+회원가입 시 PENDING 상태로 저장되며, 관리자 승인 후 APPROVED 상태로 전환되어 동문 전용 기능을 사용할 수 있다.
 
 ---
 
 ## 인증 플로우
 
 ```
-1. 소셜 로그인 (Google / Kakao / Naver)
-2. 신규 유저: DB에 User 저장 (status: PENDING)
-   기존 유저: 세션 발급
-3. PENDING → 승인 대기 안내 페이지 (/pending)
-4. 관리자가 /admin/members에서 승인
-5. status: APPROVED → 동문 기능 전체 활성화
+1. /register 에서 이메일/비밀번호로 회원가입
+   (이름, 이메일, 비밀번호, 졸업연도, 학과 입력)
+2. DB에 User(PENDING) + AlumniProfile 동시 생성
+3. /login 으로 리다이렉트 → 가입 완료 안내
+4. 로그인 → PENDING 상태 → /pending 안내 페이지
+5. 관리자가 /admin/members 에서 승인
+6. status: APPROVED → 동문 기능 전체 활성화
 ```
 
 ---
@@ -23,7 +24,7 @@
 
 | 상태 | 설명 |
 |------|------|
-| `PENDING` | 소셜 로그인 완료, 관리자 승인 대기 |
+| `PENDING` | 회원가입 완료, 관리자 승인 대기 |
 | `APPROVED` | 승인 완료, 동문 전용 기능 사용 가능 |
 | `REJECTED` | 승인 거절, 로그인 가능하나 동문 기능 차단 |
 | `ADMIN` | 관리자 |
@@ -34,13 +35,14 @@
 
 | 경로 | 설명 |
 |------|------|
-| `/login` | 로그인 페이지 (소셜 버튼) |
+| `/register` | 회원가입 페이지 |
+| `/login` | 로그인 페이지 (이메일/비밀번호) |
 | `/pending` | 승인 대기 안내 페이지 |
 | `/api/auth/[...nextauth]` | NextAuth.js 핸들러 |
 
 ---
 
-## 미들웨어 (`middleware.ts`)
+## 미들웨어 (`proxy.ts`)
 
 ```
 /alumni          → APPROVED 이상만 접근
@@ -66,59 +68,42 @@ model User {
   name           String
   email          String         @unique
   image          String?
+  password       String?        // 이메일/비밀번호 인증 (bcrypt, cost 12)
   status         UserStatus     @default(PENDING)
-  createdAt      DateTime       @default(now())
+  createdAt      DateTime       @default(now()) @map("created_at")
+  updatedAt      DateTime       @updatedAt @map("updated_at")
   alumniProfile  AlumniProfile?
-  accounts       Account[]
-  sessions       Session[]
 }
 
-model Account {
-  id                String  @id @default(cuid())
-  userId            Int
-  type              String
-  provider          String
-  providerAccountId String
-  access_token      String?
-  refresh_token     String?
-  expires_at        Int?
-  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+model AlumniProfile {
+  id             Int     @id @default(autoincrement())
+  graduationYear Int     @map("graduation_year")
+  department     String  @map("department")  // 필수
+  phone          String? @map("phone")        // 선택
 
-  @@unique([provider, providerAccountId])
-}
-
-model Session {
-  id           String   @id @default(cuid())
-  sessionToken String   @unique
-  userId       Int
-  expires      DateTime
-  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId Int  @unique @map("user_id")
+  user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 ```
 
 ---
 
-## NextAuth 설정 포인트
+## NextAuth 설정
 
-- `PrismaAdapter` 사용
-- `session.strategy: "database"`
+- OAuth 없음 (Credentials provider만 사용)
+- `session.strategy: "jwt"` (DB 세션 테이블 불필요)
+- `PrismaAdapter` 미사용
+- `callbacks.jwt`: 매 요청마다 DB에서 `status` 재조회 (관리자 변경 즉시 반영)
 - `callbacks.session`: `session.user.status`, `session.user.id` 포함
-- `callbacks.signIn`: REJECTED 유저 로그인 차단
-
----
-
-## 동문 프로필 등록
-
-최초 APPROVED 전환 시 또는 APPROVED 후 마이페이지에서 AlumniProfile 등록.  
-필수 항목: 졸업년도, 학과, 전화번호.
 
 ---
 
 ## 수용 기준
 
-- [ ] Google / Kakao / Naver 소셜 로그인이 동작한다
-- [ ] 신규 로그인 시 PENDING 상태로 저장된다
-- [ ] PENDING 유저가 /alumni 접근 시 /pending으로 리다이렉트된다
-- [ ] REJECTED 유저가 로그인 시도 시 접근 거부 메시지를 표시한다
-- [ ] ADMIN 유저만 /admin에 접근 가능하다
-- [ ] 세션에 status, id가 포함된다
+- [x] 이메일/비밀번호로 회원가입이 동작한다
+- [x] 회원가입 시 AlumniProfile이 함께 생성된다
+- [x] 신규 가입 시 PENDING 상태로 저장된다
+- [x] PENDING 유저가 /alumni 접근 시 /pending으로 리다이렉트된다
+- [x] REJECTED 유저가 로그인 시도 시 접근 거부 메시지를 표시한다
+- [x] ADMIN 유저만 /admin에 접근 가능하다
+- [x] 세션에 status, id가 포함된다

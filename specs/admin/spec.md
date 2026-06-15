@@ -22,11 +22,9 @@ ADMIN 권한 유저만 접근 가능.
 | `/admin` | 대시보드 (통계 요약) |
 | `/admin/members` | 동문 목록 + 승인/거절 |
 | `/admin/notices` | 공지사항 관리 |
-| `/admin/posts` | 자유게시판 관리 |
-| `/admin/gallery` | 갤러리 관리 |
 | `/admin/events` | 행사 일정 관리 |
 | `/admin/officers` | 임원진 관리 |
-| `/admin/scholarship` | 장학회 관리 |
+| `/admin/scholarships` | 장학회 관리 |
 
 ---
 
@@ -46,14 +44,6 @@ ADMIN 권한 유저만 접근 가능.
 - 목록: 제목, 작성일, 조회수
 - 작성 / 수정 / 삭제
 
-### 자유게시판 관리 (`/admin/posts`)
-- 목록: 제목, 작성자, 작성일, 댓글 수
-- 삭제 (부적절 게시글 삭제)
-
-### 갤러리 관리 (`/admin/gallery`)
-- 목록: 제목, 이미지 수, 작성일
-- 작성 / 수정 / 삭제
-
 ### 행사 관리 (`/admin/events`)
 - 목록: 행사명, 날짜, 장소
 - 등록 / 수정 / 삭제
@@ -63,9 +53,9 @@ ADMIN 권한 유저만 접근 가능.
 - 등록 / 수정 / 삭제
 - 순서 변경 (order 필드)
 
-### 장학회 관리 (`/admin/scholarship`)
-- 소개 텍스트 수정
+### 장학회 관리 (`/admin/scholarships`)
 - 장학 목록: 등록 / 수정 / 삭제
+- 소개 텍스트는 코드 상수로 관리 (DB 불필요)
 
 ---
 

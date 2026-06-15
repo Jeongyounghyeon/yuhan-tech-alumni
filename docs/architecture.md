@@ -11,11 +11,11 @@
 | 프레임워크 | Next.js 16 (App Router) | React 19 |
 | 언어 | TypeScript | strict 모드 |
 | 스타일 | Tailwind CSS v4 + shadcn/ui | |
-| 인증 | NextAuth.js v5 (Auth.js) | PrismaAdapter |
+| 인증 | NextAuth.js v5 (Auth.js) | Credentials provider, JWT 세션, PrismaAdapter 없음 |
 | ORM | Prisma v7 | `@prisma/adapter-pg` 드라이버 어댑터 방식 |
 | DB | PostgreSQL 16 | Docker 컨테이너 |
 | 이미지 스토리지 | Cloudflare R2 | presigned URL 방식 |
-| 캘린더 UI | @schedule-x/react | 행사 일정 페이지 전용 |
+| 캘린더 UI | 커스텀 컴포넌트 | `EventsCalendar.tsx` 직접 구현 |
 | 폰트 | Noto Sans KR + Noto Serif KR | next/font/google |
 | 배포 | Docker Compose → 자체 서버 | |
 
@@ -26,58 +26,49 @@
 ```
 yuhan-tech-alumni/
 ├── app/                        # Next.js App Router
-│   ├── (public)/               # 레이아웃 그룹: 공개 페이지
+│   ├── (public)/               # 레이아웃 그룹: Header + Footer 포함
 │   │   ├── layout.tsx          # 공통 Header + Footer
 │   │   ├── page.tsx            # 홈 (/)
 │   │   ├── notices/            # 공지사항
 │   │   ├── board/              # 자유게시판
+│   │   ├── alumni/             # 동문 명부 (APPROVED 전용)
 │   │   ├── events/             # 행사 일정
 │   │   ├── gallery/            # 갤러리
 │   │   ├── officers/           # 임원진
-│   │   └── scholarship/        # 장학회
-│   ├── (auth)/                 # 레이아웃 그룹: 인증 전용 레이아웃
-│   │   ├── login/page.tsx      # 로그인
-│   │   └── pending/page.tsx    # 승인 대기 안내
-│   ├── (member)/               # 레이아웃 그룹: 로그인 동문 전용
-│   │   └── alumni/             # 동문 명부
-│   ├── admin/                  # 백오피스 (ADMIN 전용)
+│   │   ├── scholarship/        # 장학회
+│   │   ├── login/              # 로그인
+│   │   ├── register/           # 회원가입
+│   │   └── pending/            # 승인 대기 안내
+│   ├── admin/                  # 백오피스 (ADMIN 전용, 별도 레이아웃)
 │   │   ├── layout.tsx          # 관리자 사이드바 레이아웃
 │   │   ├── page.tsx            # 대시보드
-│   │   ├── members/
-│   │   ├── notices/
-│   │   ├── posts/
-│   │   ├── gallery/
-│   │   ├── events/
-│   │   ├── officers/
-│   │   └── scholarship/
-│   └── api/                    # Route Handlers
-│       ├── auth/[...nextauth]/ # NextAuth 핸들러
-│       ├── notices/
-│       ├── posts/
-│       ├── alumni/
-│       ├── events/
-│       ├── gallery/
-│       ├── officers/
-│       └── scholarship/
+│   │   ├── members/            # 회원 승인 관리
+│   │   ├── notices/            # 공지사항 CRUD
+│   │   ├── events/             # 행사 일정 CRUD
+│   │   ├── officers/           # 임원진 CRUD
+│   │   └── scholarships/       # 장학회 CRUD
+│   ├── actions/                # Server Actions
+│   │   ├── auth.ts             # register
+│   │   ├── board.ts            # createPost, createComment
+│   │   └── admin.ts            # 관리자 CRUD 전체
+│   └── api/
+│       └── auth/[...nextauth]/ # NextAuth 핸들러
 ├── components/
 │   ├── ui/                     # shadcn/ui 기본 컴포넌트 (수정 금지)
-│   ├── layout/                 # Header, Footer, Sidebar
+│   ├── layout/                 # Header, Footer
+│   ├── admin/                  # AdminNav 등 관리자 전용 컴포넌트
+│   ├── auth/                   # SignOutButton
 │   └── features/               # 기능별 컴포넌트
-│       ├── notices/
-│       ├── board/
-│       ├── alumni/
-│       ├── events/
-│       ├── gallery/
-│       └── admin/
 ├── lib/
 │   ├── prisma.ts               # Prisma 클라이언트 싱글턴
-│   ├── auth.ts                 # NextAuth 설정
-│   ├── r2.ts                   # Cloudflare R2 클라이언트
-│   └── utils.ts                # cn() 등 유틸
+│   ├── auth.ts                 # NextAuth 설정 (Credentials + JWT)
+│   └── utils.ts                # cn(), formatDate() 등 유틸
 ├── prisma/
 │   ├── schema.prisma           # 전체 스키마
-│   └── migrations/             # 마이그레이션 기록
-├── middleware.ts               # 경로별 권한 가드
+│   └── seed.ts                 # 시드 데이터
+├── types/
+│   └── next-auth.d.ts          # Session 타입 확장
+├── proxy.ts                    # 경로별 권한 가드 (Next.js 미들웨어)
 ├── docs/                       # 기술 문서
 ├── specs/                      # 기능 스펙
 ├── .env.local                  # 로컬 환경변수 (git 제외)
@@ -117,7 +108,8 @@ App Router Page (서버 컴포넌트)
 API Route Handler (이중 검증)
 ```
 
-세션은 DB 기반(`strategy: "database"`).  
+세션은 JWT 기반(`strategy: "jwt"`). DB 세션 테이블 없음.  
+JWT 콜백에서 매 요청마다 DB의 `status`를 재조회하여 관리자 상태 변경을 즉시 반영.  
 세션 객체에 `user.status`, `user.id` 포함.  
 → 상세: [인증 스펙](../specs/auth/spec.md)
 

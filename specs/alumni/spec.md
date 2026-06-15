@@ -46,15 +46,17 @@
 
 ```prisma
 model AlumniProfile {
-  id             Int    @id @default(autoincrement())
-  userId         Int    @unique
-  user           User   @relation(fields: [userId], references: [id])
-  graduationYear Int
-  department     String
-  phone          String
-  bio            String? @db.VarChar(500)
+  id             Int     @id @default(autoincrement())
+  graduationYear Int     @map("graduation_year")
+  department     String  @map("department")  // 필수
+  phone          String? @map("phone")        // 선택
+
+  userId Int  @unique @map("user_id")
+  user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 ```
+
+> `phone`은 선택 항목. `bio` 필드 없음. AlumniProfile은 회원가입 시 User와 함께 생성된다.
 
 ---
 
