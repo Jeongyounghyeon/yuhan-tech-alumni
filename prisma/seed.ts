@@ -125,15 +125,6 @@ async function main() {
   });
 
   // 장학회
-  await prisma.scholarshipInfo.upsert({
-    where: { id: 1 },
-    update: {},
-    create: {
-      id: 1,
-      description: "유한공업고등학교 총동문회 장학회는 유일한 박사의 교육 정신을 이어받아 후배 양성에 기여하고자 설립되었습니다. 경제적 어려움에도 불구하고 학업에 열정을 지닌 후배들에게 장학금을 지원합니다.",
-    },
-  });
-
   await prisma.scholarship.createMany({
     skipDuplicates: true,
     data: [
@@ -141,6 +132,30 @@ async function main() {
       { name: "동문 장학금", amount: "연 100만원", period: "1년", description: "동문 자녀 중 성적 우수자 대상", order: 2 },
     ],
   });
+
+  // 동문 회원 (APPROVED + AlumniProfile)
+  const alumniData = [
+    { name: "홍길동", email: "hong@test.com", graduationYear: 1995, department: "기계과" },
+    { name: "김철수", email: "kim@test.com", graduationYear: 1998, department: "전기과" },
+    { name: "이영희", email: "lee@test.com", graduationYear: 2000, department: "전자과" },
+    { name: "박민준", email: "park@test.com", graduationYear: 2003, department: "화학공업과" },
+    { name: "최수진", email: "choi@test.com", graduationYear: 2005, department: "기계과" },
+    { name: "정재원", email: "jung@test.com", graduationYear: 2008, department: "전기과" },
+    { name: "강다은", email: "kang@test.com", graduationYear: 2010, department: "전자과" },
+  ];
+
+  for (const alumni of alumniData) {
+    const user = await prisma.user.upsert({
+      where: { email: alumni.email },
+      update: {},
+      create: { name: alumni.name, email: alumni.email, status: "APPROVED" },
+    });
+    await prisma.alumniProfile.upsert({
+      where: { userId: user.id },
+      update: {},
+      create: { userId: user.id, graduationYear: alumni.graduationYear, department: alumni.department },
+    });
+  }
 
   console.log("✅ Seed complete");
 }

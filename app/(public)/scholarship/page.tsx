@@ -3,20 +3,18 @@ import { prisma } from "@/lib/prisma";
 export const dynamic = "force-dynamic";
 export const metadata = { title: "장학회 | 유한공업고등학교 총동문회" };
 
+const DESCRIPTION =
+  "유한공업고등학교 총동문회 장학회는 유일한 박사의 교육 정신을 이어받아 후배 양성에 기여하고자 설립되었습니다. 경제적 어려움에도 불구하고 학업에 열정을 지닌 후배들에게 장학금을 지원합니다.";
+
 export default async function ScholarshipPage() {
-  const [info, scholarships] = await Promise.all([
-    prisma.scholarshipInfo.findUnique({ where: { id: 1 } }),
-    prisma.scholarship.findMany({ orderBy: { order: "asc" } }),
-  ]);
+  const scholarships = await prisma.scholarship.findMany({ orderBy: { order: "asc" } });
 
   return (
     <div className="max-w-6xl mx-auto px-4 py-12">
       <h1 className="section-title">장학회</h1>
       <div className="section-divider" />
 
-      {info && (
-        <p className="text-muted-foreground mb-10 leading-relaxed max-w-2xl">{info.description}</p>
-      )}
+      <p className="text-muted-foreground mb-10 leading-relaxed max-w-2xl">{DESCRIPTION}</p>
 
       <h2 className="text-lg font-bold mb-4">장학 안내</h2>
       {scholarships.length === 0 ? (

@@ -18,7 +18,18 @@ const NAV_ITEMS = [
   { href: "/scholarship", label: "장학회" },
 ];
 
-export function Header() {
+type UserInfo = {
+  name?: string | null;
+  image?: string | null;
+  status?: string;
+} | null;
+
+interface HeaderProps {
+  user?: UserInfo;
+  signOutButton?: React.ReactNode;
+}
+
+export function Header({ user, signOutButton }: HeaderProps) {
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
 
@@ -67,6 +78,41 @@ export function Header() {
             ))}
           </nav>
 
+          {/* 인증 영역 */}
+          <div className="hidden lg:flex items-center gap-3">
+            {!user ? (
+              <Link
+                href="/login"
+                className="px-4 py-1.5 text-sm font-medium border border-primary text-primary rounded-lg hover:bg-primary hover:text-primary-foreground transition-colors"
+              >
+                로그인
+              </Link>
+            ) : (
+              <div className="flex items-center gap-3">
+                {user.status === "PENDING" && (
+                  <span className="text-xs bg-yellow-100 text-yellow-700 px-2 py-0.5 rounded-full font-medium">
+                    승인 대기
+                  </span>
+                )}
+                <div className="flex items-center gap-2">
+                  {user.image ? (
+                    <img
+                      src={user.image}
+                      alt={user.name ?? ""}
+                      className="w-7 h-7 rounded-full"
+                    />
+                  ) : (
+                    <div className="w-7 h-7 rounded-full bg-primary text-primary-foreground text-xs flex items-center justify-center font-bold">
+                      {user.name?.[0] ?? "?"}
+                    </div>
+                  )}
+                  <span className="text-sm text-foreground">{user.name}</span>
+                </div>
+                {signOutButton}
+              </div>
+            )}
+          </div>
+
           {/* 모바일 햄버거 */}
           <button
             className="lg:hidden p-2 rounded-md text-foreground hover:bg-accent"
@@ -96,6 +142,22 @@ export function Header() {
                   {item.label}
                 </Link>
               ))}
+              <div className="pt-2 border-t border-border mt-1">
+                {!user ? (
+                  <Link
+                    href="/login"
+                    onClick={() => setMobileOpen(false)}
+                    className="block px-3 py-2.5 text-sm font-medium text-primary"
+                  >
+                    로그인
+                  </Link>
+                ) : (
+                  <div className="flex items-center justify-between px-3 py-2">
+                    <span className="text-sm text-foreground">{user.name}</span>
+                    {signOutButton}
+                  </div>
+                )}
+              </div>
             </nav>
           </div>
         )}

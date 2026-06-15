@@ -1,7 +1,9 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
+import { auth } from "@/lib/auth";
 import { formatDate } from "@/lib/utils";
+import { createComment } from "@/app/actions/board";
 
 export const dynamic = "force-dynamic";
 
@@ -14,16 +16,24 @@ export default async function BoardDetailPage({
   const postId = Number(id);
   if (isNaN(postId)) notFound();
 
-  const post = await prisma.post.findUnique({
-    where: { id: postId },
-    include: {
-      author: { select: { name: true } },
-      comments: { include: { author: { select: { name: true } } }, orderBy: { createdAt: "asc" } },
-    },
-  });
+  const [post, session] = await Promise.all([
+    prisma.post.findUnique({
+      where: { id: postId },
+      include: {
+        author: { select: { name: true } },
+        comments: {
+          include: { author: { select: { name: true } } },
+          orderBy: { createdAt: "asc" },
+        },
+      },
+    }),
+    auth(),
+    prisma.post.update({ where: { id: postId }, data: { viewCount: { increment: 1 } } }).catch(() => null),
+  ]);
   if (!post) notFound();
 
-  await prisma.post.update({ where: { id: postId }, data: { viewCount: { increment: 1 } } });
+  const canComment =
+    session?.user.status === "APPROVED" || session?.user.status === "ADMIN";
 
   return (
     <div className="max-w-4xl mx-auto px-4 py-12">
@@ -59,7 +69,35 @@ export default async function BoardDetailPage({
             ))}
           </ul>
         )}
-        <p className="text-sm text-muted-foreground">댓글 작성은 로그인 후 이용 가능합니다.</p>
+
+        {canComment ? (
+          <form action={createComment} className="flex flex-col gap-3">
+            <input type="hidden" name="postId" value={post.id} />
+            <textarea
+              name="content"
+              required
+              rows={3}
+              placeholder="댓글을 입력하세요"
+              className="w-full px-4 py-3 border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary resize-none"
+            />
+            <div className="flex justify-end">
+              <button
+                type="submit"
+                className="px-5 py-2 text-sm font-medium bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors"
+              >
+                댓글 등록
+              </button>
+            </div>
+          </form>
+        ) : (
+          <p className="text-sm text-muted-foreground">
+            댓글 작성은{" "}
+            <Link href="/login" className="text-primary hover:underline">
+              로그인
+            </Link>{" "}
+            후 이용 가능합니다.
+          </p>
+        )}
       </section>
     </div>
   );

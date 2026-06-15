@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
+import { auth } from "@/lib/auth";
 import { formatDate } from "@/lib/utils";
 import { Pagination } from "@/components/features/Pagination";
 
@@ -14,8 +15,9 @@ export default async function BoardPage({
 }: {
   searchParams: Promise<{ page?: string }>;
 }) {
-  const { page: pageParam } = await searchParams;
+  const [{ page: pageParam }, session] = await Promise.all([searchParams, auth()]);
   const page = Math.max(1, Number(pageParam ?? 1));
+  const canWrite = session?.user.status === "APPROVED" || session?.user.status === "ADMIN";
   const skip = (page - 1) * LIMIT;
 
   const [posts, total] = await Promise.all([
@@ -41,12 +43,14 @@ export default async function BoardPage({
     <div className="max-w-6xl mx-auto px-4 py-12">
       <div className="flex items-end justify-between mb-2">
         <h1 className="section-title">자유게시판</h1>
-        <Link
-          href="/board/new"
-          className="text-sm bg-primary text-primary-foreground px-4 py-2 rounded-lg hover:bg-primary/90 transition-colors"
-        >
-          글쓰기
-        </Link>
+        {canWrite && (
+          <Link
+            href="/board/new"
+            className="text-sm bg-primary text-primary-foreground px-4 py-2 rounded-lg hover:bg-primary/90 transition-colors"
+          >
+            글쓰기
+          </Link>
+        )}
       </div>
       <div className="section-divider" />
 
