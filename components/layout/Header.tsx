@@ -89,6 +89,14 @@ export function Header({ user, signOutButton }: HeaderProps) {
               </Link>
             ) : (
               <div className="flex items-center gap-3">
+                {user.status === "ADMIN" && (
+                  <Link
+                    href="/admin"
+                    className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full font-medium hover:bg-primary/20 transition-colors"
+                  >
+                    관리자
+                  </Link>
+                )}
                 {user.status === "PENDING" && (
                   <span className="text-xs bg-yellow-100 text-yellow-700 px-2 py-0.5 rounded-full font-medium">
                     승인 대기
@@ -153,7 +161,18 @@ export function Header({ user, signOutButton }: HeaderProps) {
                   </Link>
                 ) : (
                   <div className="flex items-center justify-between px-3 py-2">
-                    <span className="text-sm text-foreground">{user.name}</span>
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm text-foreground">{user.name}</span>
+                      {user.status === "ADMIN" && (
+                        <Link
+                          href="/admin"
+                          onClick={() => setMobileOpen(false)}
+                          className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full font-medium"
+                        >
+                          관리자
+                        </Link>
+                      )}
+                    </div>
                     {signOutButton}
                   </div>
                 )}
