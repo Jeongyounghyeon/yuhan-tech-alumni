@@ -17,7 +17,7 @@ export default async function BoardPage({
 }) {
   const [{ page: pageParam }, session] = await Promise.all([searchParams, auth()]);
   const page = Math.max(1, Number(pageParam ?? 1));
-  const canWrite = session?.user.status === "APPROVED" || session?.user.status === "ADMIN";
+  const canWrite = session?.user.status === "APPROVED";
   const skip = (page - 1) * LIMIT;
 
   const [posts, total] = await Promise.all([

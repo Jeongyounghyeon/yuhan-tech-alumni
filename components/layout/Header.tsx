@@ -22,6 +22,7 @@ type UserInfo = {
   name?: string | null;
   image?: string | null;
   status?: string;
+  isAdmin?: boolean;
 } | null;
 
 interface HeaderProps {
@@ -89,7 +90,7 @@ export function Header({ user, signOutButton }: HeaderProps) {
               </Link>
             ) : (
               <div className="flex items-center gap-3">
-                {user.status === "ADMIN" && (
+                {user.isAdmin && (
                   <Link
                     href="/admin"
                     className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full font-medium hover:bg-primary/20 transition-colors"
@@ -163,7 +164,7 @@ export function Header({ user, signOutButton }: HeaderProps) {
                   <div className="flex items-center justify-between px-3 py-2">
                     <div className="flex items-center gap-2">
                       <span className="text-sm text-foreground">{user.name}</span>
-                      {user.status === "ADMIN" && (
+                      {user.isAdmin && (
                         <Link
                           href="/admin"
                           onClick={() => setMobileOpen(false)}

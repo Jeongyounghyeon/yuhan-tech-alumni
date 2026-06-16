@@ -32,8 +32,7 @@ export default async function BoardDetailPage({
   ]);
   if (!post) notFound();
 
-  const canComment =
-    session?.user.status === "APPROVED" || session?.user.status === "ADMIN";
+  const canComment = session?.user.status === "APPROVED";
 
   return (
     <div className="max-w-4xl mx-auto px-4 py-12">

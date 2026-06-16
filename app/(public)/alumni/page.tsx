@@ -25,7 +25,7 @@ export default async function AlumniPage({
   const currentPage = Math.max(1, Number(page) || 1);
 
   const userWhere: Prisma.UserWhereInput = {
-    status: { in: ["APPROVED", "ADMIN"] },
+    status: "APPROVED",
   };
   if (name) userWhere.name = { contains: name, mode: "insensitive" };
 

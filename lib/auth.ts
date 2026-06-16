@@ -23,11 +23,11 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
 
         const user = await prisma.user.findUnique({ where: { email } });
         if (!user || !user.password) return null;
-        if (user.status === "REJECTED") return null;
 
         const valid = await bcrypt.compare(password, user.password);
         if (!valid) return null;
 
+        // REJECTED 유저도 로그인 허용 — 미들웨어가 /pending으로 리다이렉트
         return { id: String(user.id), email: user.email, name: user.name, image: user.image };
       },
     }),
@@ -37,17 +37,19 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       if (user) {
         token.id = user.id;
       }
-      // 매 요청마다 DB에서 최신 status를 가져와 관리자 상태 변경을 즉시 반영
+      // 매 요청마다 DB에서 최신 상태 조회 (관리자 권한 변경 즉시 반영)
       const dbUser = await prisma.user.findUnique({
         where: { id: Number(token.id) },
-        select: { status: true },
+        select: { status: true, isAdmin: true },
       });
       token.status = dbUser?.status;
+      token.isAdmin = dbUser?.isAdmin ?? false;
       return token;
     },
     async session({ session, token }) {
       session.user.id = token.id as string;
       session.user.status = token.status as UserStatus;
+      session.user.isAdmin = token.isAdmin ?? false;
       return session;
     },
   },

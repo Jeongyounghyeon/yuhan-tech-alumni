@@ -7,7 +7,7 @@ export const metadata = { title: "글쓰기 | 유한공업고등학교 총동문
 
 export default async function BoardNewPage() {
   const session = await auth();
-  if (!session || (session.user.status !== "APPROVED" && session.user.status !== "ADMIN")) {
+  if (!session || session.user.status !== "APPROVED") {
     redirect("/login");
   }
 

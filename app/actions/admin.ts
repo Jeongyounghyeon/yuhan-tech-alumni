@@ -7,7 +7,7 @@ import { revalidatePath } from "next/cache";
 
 async function assertAdmin() {
   const session = await auth();
-  if (session?.user.status !== "ADMIN") redirect("/");
+  if (!session?.user.isAdmin) redirect("/");
   return session!;
 }
 
@@ -15,13 +15,21 @@ async function assertAdmin() {
 
 export async function approveUser(userId: number) {
   await assertAdmin();
-  await prisma.user.update({ where: { id: userId }, data: { status: "APPROVED" } });
+  await prisma.user.update({
+    where: { id: userId },
+    data: { status: "APPROVED", rejectionReason: null },
+  });
   revalidatePath("/admin/members");
 }
 
-export async function rejectUser(userId: number) {
+export async function rejectUser(formData: FormData) {
   await assertAdmin();
-  await prisma.user.update({ where: { id: userId }, data: { status: "REJECTED" } });
+  const userId = Number(formData.get("userId"));
+  const reason = (formData.get("reason") as string | null)?.trim() || null;
+  await prisma.user.update({
+    where: { id: userId },
+    data: { status: "REJECTED", rejectionReason: reason },
+  });
   revalidatePath("/admin/members");
 }
 

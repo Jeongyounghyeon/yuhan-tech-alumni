@@ -13,7 +13,8 @@ async function main() {
     create: {
       name: "관리자",
       email: "admin@yuhan.ac.kr",
-      status: "ADMIN",
+      status: "APPROVED",
+      isAdmin: true,
     },
   });
 

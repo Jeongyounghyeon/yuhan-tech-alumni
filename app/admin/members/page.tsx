@@ -10,14 +10,12 @@ const STATUS_LABEL: Record<UserStatus, string> = {
   PENDING: "대기",
   APPROVED: "승인",
   REJECTED: "거절",
-  ADMIN: "관리자",
 };
 
 const STATUS_COLOR: Record<UserStatus, string> = {
   PENDING: "bg-amber-50 text-amber-700 border-amber-200",
   APPROVED: "bg-green-50 text-green-700 border-green-200",
   REJECTED: "bg-red-50 text-red-600 border-red-200",
-  ADMIN: "bg-primary/10 text-primary border-primary/20",
 };
 
 const FILTERS = [
@@ -34,7 +32,7 @@ export default async function MembersPage({
 }) {
   const { filter = "PENDING" } = await searchParams;
 
-  const validStatuses: string[] = ["PENDING", "APPROVED", "REJECTED", "ADMIN"];
+  const validStatuses: string[] = ["PENDING", "APPROVED", "REJECTED"];
   const where =
     filter === "ALL" || !validStatuses.includes(filter)
       ? {}
@@ -89,7 +87,16 @@ export default async function MembersPage({
             ) : (
               users.map((user) => (
                 <tr key={user.id} className="hover:bg-muted/20">
-                  <td className="px-4 py-3 font-medium">{user.name}</td>
+                  <td className="px-4 py-3 font-medium">
+                    <div className="flex items-center gap-1.5">
+                      {user.name}
+                      {user.isAdmin && (
+                        <span className="text-[10px] bg-primary/10 text-primary border border-primary/20 px-1.5 py-0.5 rounded-full">
+                          관리자
+                        </span>
+                      )}
+                    </div>
+                  </td>
                   <td className="px-4 py-3 text-muted-foreground">{user.email}</td>
                   <td className="px-4 py-3 text-muted-foreground">
                     {user.alumniProfile?.graduationYear ?? "-"}
@@ -98,17 +105,24 @@ export default async function MembersPage({
                     {user.alumniProfile?.department ?? "-"}
                   </td>
                   <td className="px-4 py-3">
-                    <span
-                      className={`px-2 py-0.5 text-xs rounded-full border ${STATUS_COLOR[user.status]}`}
-                    >
-                      {STATUS_LABEL[user.status]}
-                    </span>
+                    <div>
+                      <span
+                        className={`px-2 py-0.5 text-xs rounded-full border ${STATUS_COLOR[user.status]}`}
+                      >
+                        {STATUS_LABEL[user.status]}
+                      </span>
+                      {user.status === "REJECTED" && user.rejectionReason && (
+                        <p className="text-xs text-muted-foreground mt-1 max-w-[160px] truncate" title={user.rejectionReason}>
+                          {user.rejectionReason}
+                        </p>
+                      )}
+                    </div>
                   </td>
                   <td className="px-4 py-3 text-muted-foreground text-xs">
                     {formatDate(user.createdAt)}
                   </td>
                   <td className="px-4 py-3">
-                    <div className="flex gap-2">
+                    <div className="flex flex-col gap-2">
                       {user.status === "PENDING" && (
                         <>
                           <form action={approveUser.bind(null, user.id)}>
@@ -119,10 +133,17 @@ export default async function MembersPage({
                               승인
                             </button>
                           </form>
-                          <form action={rejectUser.bind(null, user.id)}>
+                          <form action={rejectUser} className="flex gap-1">
+                            <input type="hidden" name="userId" value={user.id} />
+                            <input
+                              type="text"
+                              name="reason"
+                              placeholder="거절 사유 (선택)"
+                              className="w-28 px-2 py-1 text-xs border border-border rounded-lg focus:outline-none focus:ring-1 focus:ring-primary/30"
+                            />
                             <button
                               type="submit"
-                              className="px-3 py-1 text-xs border border-red-200 text-red-600 rounded-lg hover:bg-red-50 transition-colors"
+                              className="px-3 py-1 text-xs border border-red-200 text-red-600 rounded-lg hover:bg-red-50 transition-colors whitespace-nowrap"
                             >
                               거절
                             </button>

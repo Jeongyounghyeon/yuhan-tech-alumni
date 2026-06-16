@@ -5,7 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
 
 function assertApproved(status?: string) {
-  if (status !== "APPROVED" && status !== "ADMIN") {
+  if (status !== "APPROVED") {
     redirect("/login");
   }
 }

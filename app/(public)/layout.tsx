@@ -6,7 +6,12 @@ import { SignOutButton } from "@/components/auth/SignOutButton";
 export default async function PublicLayout({ children }: { children: React.ReactNode }) {
   const session = await auth();
   const user = session?.user
-    ? { name: session.user.name, image: session.user.image, status: session.user.status }
+    ? {
+        name: session.user.name,
+        image: session.user.image,
+        status: session.user.status,
+        isAdmin: session.user.isAdmin,
+      }
     : null;
 
   return (

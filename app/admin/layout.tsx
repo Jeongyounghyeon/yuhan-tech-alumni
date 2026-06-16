@@ -7,7 +7,7 @@ export const dynamic = "force-dynamic";
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
   const session = await auth();
-  if (session?.user.status !== "ADMIN") redirect("/");
+  if (!session?.user.isAdmin) redirect("/");
 
   const pendingCount = await prisma.user.count({ where: { status: "PENDING" } });
 
