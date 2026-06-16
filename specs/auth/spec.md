@@ -27,7 +27,9 @@
 | `PENDING` | 회원가입 완료, 관리자 승인 대기 |
 | `APPROVED` | 승인 완료, 동문 전용 기능 사용 가능 |
 | `REJECTED` | 승인 거절, 로그인 가능하나 동문 기능 차단 |
-| `ADMIN` | 관리자 |
+
+> 관리자 권한은 `UserStatus`와 분리된 `isAdmin: Boolean` 필드로 관리한다.  
+> `APPROVED` 유저에게 `isAdmin = true`를 부여하면 관리자가 된다.
 
 ---
 
@@ -60,19 +62,20 @@ enum UserStatus {
   PENDING
   APPROVED
   REJECTED
-  ADMIN
 }
 
 model User {
-  id             Int            @id @default(autoincrement())
-  name           String
-  email          String         @unique
-  image          String?
-  password       String?        // 이메일/비밀번호 인증 (bcrypt, cost 12)
-  status         UserStatus     @default(PENDING)
-  createdAt      DateTime       @default(now()) @map("created_at")
-  updatedAt      DateTime       @updatedAt @map("updated_at")
-  alumniProfile  AlumniProfile?
+  id              Int            @id @default(autoincrement())
+  name            String
+  email           String         @unique
+  image           String?
+  password        String?        // 이메일/비밀번호 인증 (bcrypt, cost 12)
+  status          UserStatus     @default(PENDING)
+  isAdmin         Boolean        @default(false) @map("is_admin")
+  rejectionReason String?        @map("rejection_reason")  // 거절 사유
+  createdAt       DateTime       @default(now()) @map("created_at")
+  updatedAt       DateTime       @updatedAt @map("updated_at")
+  alumniProfile   AlumniProfile?
 }
 
 model AlumniProfile {
@@ -93,8 +96,8 @@ model AlumniProfile {
 - OAuth 없음 (Credentials provider만 사용)
 - `session.strategy: "jwt"` (DB 세션 테이블 불필요)
 - `PrismaAdapter` 미사용
-- `callbacks.jwt`: 매 요청마다 DB에서 `status` 재조회 (관리자 변경 즉시 반영)
-- `callbacks.session`: `session.user.status`, `session.user.id` 포함
+- `callbacks.jwt`: 매 요청마다 DB에서 `status`, `isAdmin` 재조회 (관리자 변경 즉시 반영)
+- `callbacks.session`: `session.user.status`, `session.user.id`, `session.user.isAdmin` 포함
 
 ---
 

@@ -1,6 +1,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { prisma } from "@/lib/prisma";
+import { auth } from "@/lib/auth";
 import { formatDate } from "@/lib/utils";
 import { Pagination } from "@/components/features/Pagination";
 
@@ -19,7 +20,8 @@ export default async function GalleryPage({
   const page = Math.max(1, Number(pageParam ?? 1));
   const skip = (page - 1) * LIMIT;
 
-  const [posts, total] = await Promise.all([
+  const [session, posts, total] = await Promise.all([
+    auth(),
     prisma.galleryPost.findMany({
       orderBy: { createdAt: "desc" },
       skip,
@@ -38,7 +40,17 @@ export default async function GalleryPage({
 
   return (
     <div className="max-w-6xl mx-auto px-4 py-12">
-      <h1 className="section-title">갤러리</h1>
+      <div className="flex items-center justify-between">
+        <h1 className="section-title">갤러리</h1>
+        {session?.user.isAdmin && (
+          <Link
+            href="/gallery/new"
+            className="px-4 py-2 text-sm font-medium bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors"
+          >
+            + 갤러리 등록
+          </Link>
+        )}
+      </div>
       <div className="section-divider" />
 
       {posts.length === 0 ? (

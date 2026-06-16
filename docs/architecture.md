@@ -50,15 +50,17 @@ yuhan-tech-alumni/
 │   ├── actions/                # Server Actions
 │   │   ├── auth.ts             # register
 │   │   ├── board.ts            # createPost, createComment
-│   │   └── admin.ts            # 관리자 CRUD 전체
+│   │   ├── admin.ts            # 관리자 CRUD 전체 (assertAdmin 공유)
+│   │   └── gallery.ts          # 갤러리 CRUD + R2 이미지 삭제
 │   └── api/
-│       └── auth/[...nextauth]/ # NextAuth 핸들러
+│       ├── auth/[...nextauth]/ # NextAuth 핸들러
+│       └── gallery/upload/     # R2 presigned URL 발급 (관리자)
 ├── components/
 │   ├── ui/                     # shadcn/ui 기본 컴포넌트 (수정 금지)
 │   ├── layout/                 # Header, Footer
 │   ├── admin/                  # AdminNav 등 관리자 전용 컴포넌트
 │   ├── auth/                   # SignOutButton
-│   └── features/               # 기능별 컴포넌트
+│   └── features/               # 기능별 컴포넌트 (Pagination, EventsCalendar, GalleryForm)
 ├── lib/
 │   ├── prisma.ts               # Prisma 클라이언트 싱글턴
 │   ├── auth.ts                 # NextAuth 설정 (Credentials + JWT)

@@ -11,3 +11,7 @@ export const r2 = new S3Client({
 
 export const R2_BUCKET = process.env.R2_BUCKET_NAME!;
 export const R2_PUBLIC_URL = process.env.R2_PUBLIC_URL!;
+
+export function r2KeyFromUrl(publicUrl: string): string {
+  return new URL(publicUrl).pathname.slice(1);
+}

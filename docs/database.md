@@ -26,18 +26,19 @@ enum UserStatus {
   PENDING   // 회원가입 완료, 승인 대기
   APPROVED  // 관리자 승인 완료
   REJECTED  // 승인 거절
-  ADMIN     // 관리자
 }
 
 model User {
-  id        Int        @id @default(autoincrement())
-  name      String
-  email     String     @unique
-  image     String?
-  password  String?    // bcrypt hash (cost 12)
-  status    UserStatus @default(PENDING)
-  createdAt DateTime   @default(now()) @map("created_at")
-  updatedAt DateTime   @updatedAt @map("updated_at")
+  id              Int        @id @default(autoincrement())
+  name            String
+  email           String     @unique
+  image           String?
+  password        String?    // bcrypt hash (cost 12)
+  status          UserStatus @default(PENDING)
+  isAdmin         Boolean    @default(false) @map("is_admin")
+  rejectionReason String?    @map("rejection_reason")
+  createdAt       DateTime   @default(now()) @map("created_at")
+  updatedAt       DateTime   @updatedAt @map("updated_at")
 
   alumniProfile AlumniProfile?
   notices       Notice[]
@@ -218,7 +219,7 @@ User ──1:N──► Event
 
 | 결정 | 이유 |
 |------|------|
-| `User.status` enum 4단계 | PENDING/APPROVED 외 REJECTED, ADMIN 분리로 미들웨어 판단 단순화 |
+| `User.status` enum 3단계 + `isAdmin` 분리 | 인증 상태(PENDING/APPROVED/REJECTED)와 관리자 권한(`isAdmin`)을 별도 필드로 관리 |
 | `User.password` nullable | OAuth 추가 시 소셜 로그인 유저는 password 없음 |
 | `AlumniProfile` 분리 | User(인증)와 동문 정보(도메인) 관심사 분리 |
 | `AlumniProfile.phone` nullable | 회원가입 필수 항목 최소화, 이후 프로필 수정에서 추가 가능 |

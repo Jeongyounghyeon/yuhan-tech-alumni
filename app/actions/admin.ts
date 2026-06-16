@@ -5,7 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 
-async function assertAdmin() {
+export async function assertAdmin() {
   const session = await auth();
   if (!session?.user.isAdmin) redirect("/");
   return session!;
