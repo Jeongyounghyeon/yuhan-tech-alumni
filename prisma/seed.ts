@@ -13,7 +13,7 @@ async function main() {
   // 관리자 유저 (admin@yuhan.ac.kr / admin1234)
   const admin = await prisma.user.upsert({
     where: { email: "admin@yuhan.ac.kr" },
-    update: {},
+    update: { password: adminPassword, status: "APPROVED", isAdmin: true },
     create: {
       name: "관리자",
       email: "admin@yuhan.ac.kr",
@@ -153,7 +153,7 @@ async function main() {
   for (const alumni of alumniData) {
     const user = await prisma.user.upsert({
       where: { email: alumni.email },
-      update: {},
+      update: { password: userPassword, status: "APPROVED" },
       create: { name: alumni.name, email: alumni.email, password: userPassword, status: "APPROVED" },
     });
     await prisma.alumniProfile.upsert({
