@@ -1,0 +1,44 @@
+services:
+  app:
+    image: ${APP_IMAGE}
+    ports:
+      - "3000:3000"
+    env_file:
+      - .env
+    environment:
+      DATABASE_URL: "postgresql://postgres:postgres@db:5432/yuhan_alumni_dev"
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: yuhan_alumni_dev
+    volumes:
+      - postgres_dev_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  migrate:
+    image: node:20-alpine
+    working_dir: /app
+    volumes:
+      - ./prisma:/app/prisma
+    environment:
+      DATABASE_URL: "postgresql://postgres:postgres@db:5432/yuhan_alumni_dev"
+    command: sh -c "npx --yes prisma@7 migrate deploy"
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: "no"
+
+volumes:
+  postgres_dev_data:
