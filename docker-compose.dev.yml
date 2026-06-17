@@ -34,7 +34,7 @@ services:
       - ./prisma:/app/prisma
     environment:
       DATABASE_URL: "postgresql://postgres:postgres@db:5432/yuhan_alumni_dev"
-    command: sh -c "npx --yes prisma@7 migrate deploy"
+    command: sh -c "npx --yes prisma@7 db push --accept-data-loss"
     depends_on:
       db:
         condition: service_healthy
