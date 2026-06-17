@@ -1,5 +1,5 @@
 .PHONY: help install setup dev build lint type-check \
-        db/up db/down db/push db/migrate db/studio db/reset db/generate \
+        db/up db/down db/push db/migrate db/studio db/reset db/generate db/seed \
         docker/up docker/down docker/build docker/logs
 
 # ───────────────────────────────
@@ -56,6 +56,9 @@ db/migrate: ## 마이그레이션 파일 생성 및 적용 (스테이징/프로�
 
 db/studio: ## Prisma Studio (DB GUI) 실행
 	pnpm prisma studio
+
+db/seed: ## 시드 데이터 삽입 (테스트 계정 포함)
+	pnpm prisma db seed
 
 db/reset: ## DB 초기화 (데이터 전체 삭제 후 스키마 재적용)
 	@echo "⚠️  This will delete all data. Press Ctrl+C to cancel."

@@ -17,9 +17,16 @@ make dev
 
 → http://localhost:3000
 
-## 관리자 계정
+## 시드 계정
 
-회원가입 후 `make db/studio` 에서 해당 유저의 `is_admin = true`, `status = APPROVED` 로 변경.
+```bash
+make db/seed  # 시드 데이터 삽입
+```
+
+| 역할 | 이메일 | 비밀번호 |
+|------|--------|---------|
+| 관리자 | admin@yuhan.ac.kr | admin1234 |
+| 동문 | hong@test.com | test1234 |
 
 ## 참고 문서
 

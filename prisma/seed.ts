@@ -1,18 +1,23 @@
 import "dotenv/config";
 import { PrismaClient } from "../app/generated/prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
+import bcrypt from "bcryptjs";
 
 const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL! });
 const prisma = new PrismaClient({ adapter });
 
 async function main() {
-  // 관리자 유저
+  const adminPassword = await bcrypt.hash("admin1234", 12);
+  const userPassword = await bcrypt.hash("test1234", 12);
+
+  // 관리자 유저 (admin@yuhan.ac.kr / admin1234)
   const admin = await prisma.user.upsert({
     where: { email: "admin@yuhan.ac.kr" },
     update: {},
     create: {
       name: "관리자",
       email: "admin@yuhan.ac.kr",
+      password: adminPassword,
       status: "APPROVED",
       isAdmin: true,
     },
@@ -149,7 +154,7 @@ async function main() {
     const user = await prisma.user.upsert({
       where: { email: alumni.email },
       update: {},
-      create: { name: alumni.name, email: alumni.email, status: "APPROVED" },
+      create: { name: alumni.name, email: alumni.email, password: userPassword, status: "APPROVED" },
     });
     await prisma.alumniProfile.upsert({
       where: { userId: user.id },
