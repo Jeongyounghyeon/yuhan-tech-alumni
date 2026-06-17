@@ -32,9 +32,10 @@ services:
     working_dir: /app
     volumes:
       - ./prisma:/app/prisma
+      - ./prisma.config.ts:/app/prisma.config.ts
     environment:
       DATABASE_URL: "postgresql://postgres:postgres@db:5432/yuhan_alumni_dev"
-    command: sh -c "npx --yes prisma@7 db push --accept-data-loss"
+    command: sh -c "npm install --no-save prisma@7 dotenv && npx prisma db push --accept-data-loss"
     depends_on:
       db:
         condition: service_healthy
